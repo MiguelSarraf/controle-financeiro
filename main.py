@@ -15,10 +15,8 @@ from visualizacoes import *
 if "status" not in st.session_state:
     st.session_state.status="INICIO"
 
-# match st.session_state.status:
-if st.session_state.status:
-    # case "INICIO":
-    if st.session_state.status=="INICIO":
+match st.session_state.status:
+    case "INICIO":
         st.set_page_config(layout = "centered")
         st.header("Painel de controle financeiro")
         with st.expander("Faça sua configuração inicial"):
@@ -35,8 +33,7 @@ if st.session_state.status:
             st.session_state.status="CARREGANDO"
             st.rerun()
 
-    # case 
-    if st.session_state.status=="CARREGANDO":
+    case "CARREGANDO":
         st.set_page_config(layout = "centered")
         st.write("Estou carregando sua planilha")
         url_ori=st.session_state.url_dados if "url_dados" in st.session_state else st.session_state.url
@@ -84,8 +81,7 @@ if st.session_state.status:
                 st.session_state.gids=gids
             st.rerun()
         
-    # case 
-    if st.session_state.status=="PAINEL":
+    case "PAINEL":
         st.set_page_config(layout = "wide")
         
         _, dia_fatura, datas, _, aglomerado_dia, aglomerado_dia_tipo, gympass_atividades, gympass_mes, anual, despesa_anual_tipo, custo_viagem ,despesas_parceladas=agrega_dfs(st.session_state.dados)
@@ -154,8 +150,7 @@ if st.session_state.status:
             st.session_state.status="CARREGANDO"
             st.rerun()
         
-    # case 
-    if st.session_state.status=="FLUXO":
+    case "FLUXO":
         st.set_page_config(layout = "centered")
         
         gympass=st.session_state.dados["gympass"]
@@ -189,8 +184,7 @@ if st.session_state.status:
             st.session_state.status="CARREGANDO"
             st.rerun()
  
-    # case 
-    if st.session_state.status=="CADASTRO":
+    case "CADASTRO":
         st.set_page_config(layout = "centered")
 
         colunas = st.columns(5)
