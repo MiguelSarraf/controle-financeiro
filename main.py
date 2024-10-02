@@ -174,9 +174,10 @@ match st.session_state.status:
         tabela=colunas[2].selectbox("Tabela", ["Saldo", "Gympass"], index=0)
         
         fluxo=fluxo[(fluxo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (fluxo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%12, dia_fatura)))].drop(columns=["ano_fatura", "mes_fatura"])
-        fluxo["data"]=fluxo["data"].dt.date
+        fluxo["data"]=fluxo["data"].dt.strftime("%d/%m/%Y")
+        fluxo=fluxo.format({"valor":"${.2f}"})
         gympass=gympass[(gympass["data"]>=pd.to_datetime(date(ano, mes, 1))) & (gympass["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%12, 1)))].drop(columns=["ano", "mes"])
-        gympass["data"]=gympass["data"].dt.date
+        gympass["data"]=gympass["data"].dt.strftime("%d/%m/%Y")
         st.dataframe(fluxo if tabela=="Saldo" else gympass, use_container_width=True, height=550, hide_index=True)
         
         if painel_bot:
