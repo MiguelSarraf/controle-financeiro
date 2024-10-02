@@ -98,6 +98,8 @@ if st.session_state.status:
         
         st.markdown("<h1 style='text-align: center; color: black;'>Meu painel financeiro</h1>", unsafe_allow_html=True)
         hoje=datetime.now()
+        if hoje.day<dia_fatura:
+            hoje=hoje-relativedelta(months=1)
         anos=datas["ano_fatura"].unique()
 
         colunas = st.columns(5)
