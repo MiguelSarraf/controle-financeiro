@@ -163,6 +163,8 @@ match st.session_state.status:
         
         st.header("Fluxo do mês")
         hoje=datetime.now()
+        if hoje.day<dia_fatura:
+            hoje=hoje-relativedelta(months=1)
         anos=datas["ano_fatura"].unique()
 
         colunas = st.columns(5)
