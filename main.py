@@ -7,6 +7,9 @@ from dateutil.relativedelta import relativedelta
 from textwrap import wrap
 from streamlit_gsheets import GSheetsConnection
 from streamlit_js_eval import streamlit_js_eval
+from streamlit_javascript import st_javascript
+from user_agents import parse
+
 
 from constantes import *
 from dados import *
@@ -28,6 +31,10 @@ match st.session_state.status:
         url=st.text_input("Insira o link para a sua planilha do GSheet", key="url_dados")
         
         iniciar=st.button("Carregue meu painel")
+
+        ua_string = st_javascript("""window.navigator.userAgent;""")
+        user_agent = parse(ua_string)
+        st.session_state.is_session_pc = user_agent.is_pc
         
         if iniciar:
             st.session_state.status="CARREGANDO"
@@ -91,6 +98,9 @@ match st.session_state.status:
         painel_bot=colunas[0].button("Painel")
         fluxo_bot=colunas[1].button("Fluxo")
         recarregar=colunas[4].button("Recarregar dados")
+
+        if not st.session_state.is_session_pc:
+            st.caption(":red[A visualização pode ficar melhor se você acessar o site pelo computador, mas aqui pelo celular também vai funcionar :wink:]")
         
         st.markdown("<h1 style='text-align: center; color: black;'>Meu painel financeiro</h1>", unsafe_allow_html=True)
         hoje=datetime.now()
@@ -119,29 +129,29 @@ match st.session_state.status:
             st.header("Resultados mensais")
             with st.expander("", expanded=True):
                 colunas = st.columns(2)
-                if not aglomerado_dia.empty: colunas[0].altair_chart(gera_visu_evolucao_diaria(aglomerado_dia, window_width/4), use_container_width=True)
-                if not aglomerado_dia_tipo.empty: colunas[1].altair_chart(gera_visu_tipo_diaria(aglomerado_dia_tipo, window_width/4), use_container_width=True)
+                if not aglomerado_dia.empty: colunas[0].altair_chart(gera_visu_evolucao_diaria(aglomerado_dia, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
+                if not aglomerado_dia_tipo.empty: colunas[1].altair_chart(gera_visu_tipo_diaria(aglomerado_dia_tipo, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
 
         if not gympass_atividades.empty or not gympass_mes.empty:
             st.header("Gympass")
             with st.expander(""):
                 colunas = st.columns(2)
-                if not gympass_atividades.empty: colunas[0].altair_chart(gera_visu_gympass_usos(gympass_atividades, window_width/4), use_container_width=True)
-                if not gympass_mes.empty: colunas[1].altair_chart(gera_visu_gympass_mes(gympass_mes, media_movel, window_width/4), use_container_width=True)
+                if not gympass_atividades.empty: colunas[0].altair_chart(gera_visu_gympass_usos(gympass_atividades, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
+                if not gympass_mes.empty: colunas[1].altair_chart(gera_visu_gympass_mes(gympass_mes, media_movel, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
 
         if not anual.empty or not despesa_anual_tipo.empty:
             st.header("Resultados anuais")
             with st.expander(""):
                 colunas = st.columns(2)
-                if not anual.empty: colunas[0].altair_chart(gera_visu_anual(anual, window_width/4), use_container_width=True)
-                if not despesa_anual_tipo.empty: colunas[1].altair_chart(gera_visu_tipo_anual(despesa_anual_tipo, window_width/4), use_container_width=True)
+                if not anual.empty: colunas[0].altair_chart(gera_visu_anual(anual, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
+                if not despesa_anual_tipo.empty: colunas[1].altair_chart(gera_visu_tipo_anual(despesa_anual_tipo, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
 
         if not custo_viagem.empty or not despesas_parceladas.empty:
             st.header("Outros resultados")
             with st.expander(""):
                 colunas = st.columns(2)
-                if not custo_viagem.empty: colunas[0].altair_chart(gera_visu_viagens(custo_viagem, window_width/4), use_container_width=True)
-                if not despesas_parceladas.empty: colunas[1].altair_chart(gera_visu_parceladas(despesas_parceladas, window_width/4), use_container_width=True)
+                if not custo_viagem.empty: colunas[0].altair_chart(gera_visu_viagens(custo_viagem, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
+                if not despesas_parceladas.empty: colunas[1].altair_chart(gera_visu_parceladas(despesas_parceladas, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
         
         if fluxo_bot:
             st.session_state.status="FLUXO"
@@ -149,7 +159,7 @@ match st.session_state.status:
         if recarregar:
             st.session_state.status="CARREGANDO"
             st.rerun()
-        
+    
     case "FLUXO":
         st.set_page_config(layout = "centered")
         

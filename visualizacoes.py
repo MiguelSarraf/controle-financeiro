@@ -45,11 +45,18 @@ def gera_visu_evolucao_diaria(dados, height):
         x="x",
         y="y",
         tooltip=alt.value(None)
-    ).properties(
-        title="Saldo mensal",
-        height=height
     )
     
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
+
     return grafico.configure_title(fontSize=24)
 
 def gera_visu_tipo_diaria(dados, height):
@@ -63,10 +70,17 @@ def gera_visu_tipo_diaria(dados, height):
         color=alt.Color("tipo:N", legend=alt.Legend(orient="top"), scale=alt.Scale(domain=['optativo', 'obrigatório', 'social'], range=["#34a853b0", "#c53929b0", "#ff9900b0"]), sort=ordem),
         order="order:O",
         tooltip=[alt.Tooltip("valor:Q", format="$,.2f", title="Gasto"), alt.Tooltip("data:T", format="%d/%m/%Y", title="Data"), alt.Tooltip("tipo:N", title="Tipo")]
-    ).properties(
-        title="Despesas por tipo",
-        height=height
     )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
 
@@ -77,10 +91,17 @@ def gera_visu_gympass_usos(dados, height):
         y=alt.Y("unidade:N", axis=alt.Axis(title=None)),
         color=alt.Color("atividade:N", legend=alt.Legend(title="", orient="bottom"), scale=alt.Scale(scheme="category10")),
         tooltip=alt.value(None)
-    ).properties(
-        title="Usos por unidade no mês",
-        height=height
     )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
 
@@ -110,17 +131,29 @@ def gera_visu_gympass_mes(dados, media_movel, height):
         text="texto",
         color=alt.Color("eh_maximo:N", legend=None, scale=alt.Scale(domain=[True, False], range=["red", "green"])),
         tooltip=alt.value(None)
-    ).properties(
-        title="Custo por uso no mês",
-        height=height
     )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
 
 def gera_visu_anual(dados, height):
     resultado_final=pd.DataFrame({"texto":[f"Saldo final:\nR${dados['liquido'].sum().round(2)}"], "x":[dados["data"].max()], "y":[dados["receita"].max()]})
+    
+    if height:
+        grafico=alt.Chart(dados).mark_bar(color="#08c43ab2", size=height/20)
+    else:
+        grafico=alt.Chart(dados).mark_bar(color="#08c43ab2")
 
-    grafico=alt.Chart(dados).mark_bar(color="#08c43ab2", size=25).encode(
+    grafico=grafico.encode(
         x=alt.X("data:T", axis=alt.Axis(title=None, format="%b", labelAngle=0)),
         y=alt.Y("liquido:Q", axis=alt.Axis(title=None, format="$.2f")),
         tooltip=[alt.Tooltip("data:T", format="%b/%Y", title="Mês"), alt.Tooltip("receita:Q", format="$.2f", title="Receita"), alt.Tooltip("despesa:Q", format="$.2f", title="Despesa"), alt.Tooltip("liquido:Q", format="$.2f", title="Líquido")]
@@ -137,46 +170,89 @@ def gera_visu_anual(dados, height):
         x=alt.X("x:O", axis=alt.Axis(title=None)),
         y=alt.Y("y:Q", axis=alt.Axis(title=None)),
         tooltip=alt.value(None)
-    ).properties(
-        title="Saldo anual",
-        height=height
     )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
 
 def gera_visu_tipo_anual(dados, height):
     ordem=['optativo', 'social', 'obrigatório']
-    grafico= alt.Chart(dados).transform_calculate(
-        order=f"-indexof({ordem}, datum.tipo)"
-    ).mark_bar(size=25).encode(
+
+    if height:
+        grafico= alt.Chart(dados).transform_calculate(
+            order=f"-indexof({ordem}, datum.tipo)"
+        ).mark_bar(size=height/20)
+    else:
+        grafico= alt.Chart(dados).transform_calculate(
+            order=f"-indexof({ordem}, datum.tipo)"
+        ).mark_bar()
+    grafico=grafico.encode(
         x=alt.X("data:T", axis=alt.Axis(title=None, format="%b")),
         y=alt.Y("valor:Q", axis=alt.Axis(title=None, format="$.2f")),
         color=alt.Color("tipo:N", legend=alt.Legend(orient="top"), scale=alt.Scale(domain=['optativo', 'obrigatório', 'social'], range=["#34a853", "#c53929", "#ff9900"]), sort=ordem),
         order="order:O",
         tooltip=[alt.Tooltip("data:T", format="%b/%Y", title="Mês"), alt.Tooltip("valor:Q", format="$.2f", title="Valor"), alt.Tooltip("tipo:N", title="Tipo"), alt.Tooltip("porcentagem:Q", format=".1%", title="Porcentagem")]
-    ).properties(
-        title="Tipo de gasto",
-        height=height
     )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
 
 def gera_visu_viagens(dados, height):
     dados["texto"]="R$"+dados["custo"].astype(str)
     dados["y"]=dados["custo"]/2
-    grafico= alt.Chart(dados).mark_bar(size=100).encode(
+
+    if height:
+        grafico= alt.Chart(dados).mark_bar(size=height/4)
+    else:
+        grafico= alt.Chart(dados).mark_bar()
+    grafico=grafico.encode(
         x=alt.X("viagem:N", axis=alt.Axis(title=None, labelAngle=0)),
         y=alt.Y("custo:Q", axis=alt.Axis(title=None)),
         tooltip=[alt.Tooltip("data_de_ida:T", format="%d/%m/%Y", title="Ida"), alt.Tooltip("data_de_volta:T", format="%d/%m/%Y", title="Volta"), alt.Tooltip("dias:Q", format=".0f", title="Dias"), alt.Tooltip("numero_de_pessoas:Q", format=".0f", title="Pessoas")]
-    )+alt.Chart(dados).mark_text(size=20, color="white").encode(
-        x=alt.X("viagem:N", axis=alt.Axis(title=None, labelAngle=0)),
-        y=alt.Y("y:Q", axis=alt.Axis(title=None)),
-        text="texto",
-        tooltip=alt.value(None)
-    ).properties(
-        title="Custo das viagens por dia por pessoa",
-        height=height
     )
+
+    if height:
+        grafico+= alt.Chart(dados).mark_text(size=height/20, color="white").encode(
+            x=alt.X("viagem:N", axis=alt.Axis(title=None, labelAngle=0)),
+            y=alt.Y("y:Q", axis=alt.Axis(title=None)),
+            text="texto",
+            tooltip=alt.value(None)
+        )
+    else:
+        grafico+= alt.Chart(dados).mark_text(color="white").encode(
+            x=alt.X("viagem:N", axis=alt.Axis(title=None, labelAngle=0)),
+            y=alt.Y("y:Q", axis=alt.Axis(title=None)),
+            text="texto",
+            tooltip=alt.value(None)
+        )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
 
@@ -185,9 +261,16 @@ def gera_visu_parceladas(dados, height):
         x=alt.X("data:T", axis=alt.Axis(title=None, format="%b")),
         y=alt.Y("valor:Q", axis=alt.Axis(title=None, format="$.2f")),
         tooltip=[alt.Tooltip("data:T", format="%b/%Y", title="Mês"), alt.Tooltip("valor:Q", format="$.2f", title="Valor parcelado")]
-    ).properties(
-        title="Despesas parceladas",
-        height=height
     )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Saldo mensal",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Saldo mensal"
+        )
     
     return grafico.configure_title(fontSize=24)
