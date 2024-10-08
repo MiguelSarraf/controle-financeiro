@@ -49,12 +49,12 @@ def gera_visu_evolucao_diaria(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Saldo",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Saldo"
         )
 
     return grafico.configure_title(fontSize=24)
@@ -74,12 +74,12 @@ def gera_visu_tipo_diaria(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Tipos de despesa",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Tipos de despesa"
         )
     
     return grafico.configure_title(fontSize=24)
@@ -95,12 +95,12 @@ def gera_visu_gympass_usos(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Usos do mês",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Usos do mês"
         )
     
     return grafico.configure_title(fontSize=24)
@@ -135,12 +135,12 @@ def gera_visu_gympass_mes(dados, media_movel, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Custo mensal da aula",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Custo mensal da aula"
         )
     
     return grafico.configure_title(fontSize=24)
@@ -174,12 +174,12 @@ def gera_visu_anual(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Saldo",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Saldo"
         )
     
     return grafico.configure_title(fontSize=24)
@@ -205,12 +205,12 @@ def gera_visu_tipo_anual(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Tipos de despesa",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Tipos de despesa"
         )
     
     return grafico.configure_title(fontSize=24)
@@ -246,12 +246,12 @@ def gera_visu_viagens(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Custo da viagem por dia por pessoa",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Custo da viagem por dia por pessoa"
         )
     
     return grafico.configure_title(fontSize=24)
@@ -265,12 +265,12 @@ def gera_visu_parceladas(dados, height):
     
     if height:
         grafico=grafico.properties(
-            title="Saldo mensal",
+            title="Despesas parceladas",
             height=height
         )
     else:
         grafico=grafico.properties(
-            title="Saldo mensal"
+            title="Despesas parceladas"
         )
     
     return grafico.configure_title(fontSize=24)
