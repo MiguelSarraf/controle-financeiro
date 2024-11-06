@@ -114,9 +114,9 @@ match st.session_state.status:
         mes=colunas[1].selectbox("Mês", meses, index=int(np.where(meses==hoje.month)[0][0]) if hoje.month in meses else 0)
         media_movel=colunas[2].selectbox("Meses média móvel", range(1,7), index=2)
         
-        aglomerado_dia=aglomerado_dia[(aglomerado_dia["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%12, dia_fatura)))]
+        aglomerado_dia=aglomerado_dia[(aglomerado_dia["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, dia_fatura)))]
         aglomerado_dia["data"]=aglomerado_dia["data"].dt.date
-        aglomerado_dia_tipo=aglomerado_dia_tipo[(aglomerado_dia_tipo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia_tipo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%12, dia_fatura)))]
+        aglomerado_dia_tipo=aglomerado_dia_tipo[(aglomerado_dia_tipo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia_tipo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, dia_fatura)))]
         aglomerado_dia_tipo["data"]=aglomerado_dia_tipo["data"].dt.date
         gympass_atividades=gympass_atividades[(gympass_atividades["ano"]==int(ano))&(gympass_atividades["mes"]==int(mes))]
         gympass_mes=gympass_mes[gympass_mes["ano"]==int(ano)]
@@ -183,10 +183,10 @@ match st.session_state.status:
         mes=colunas[1].selectbox("Mês", meses, index=int(np.where(meses==hoje.month)[0][0]) if hoje.month in meses else 0)
         tabela=colunas[2].selectbox("Tabela", ["Saldo", "Gympass"], index=0)
         
-        fluxo=fluxo[(fluxo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (fluxo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%12, dia_fatura)))].drop(columns=["ano_fatura", "mes_fatura"])
+        fluxo=fluxo[(fluxo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (fluxo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, dia_fatura)))].drop(columns=["ano_fatura", "mes_fatura"])
         fluxo["data"]=fluxo["data"].dt.strftime("%d/%m/%Y")
         fluxo["valor"]=fluxo["valor"].apply(lambda val: '${:.2f}'.format(val) if val>0 else '-${:.2f}'.format(-val))
-        gympass=gympass[(gympass["data"]>=pd.to_datetime(date(ano, mes, 1))) & (gympass["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%12, 1)))].drop(columns=["ano", "mes"])
+        gympass=gympass[(gympass["data"]>=pd.to_datetime(date(ano, mes, 1))) & (gympass["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, 1)))].drop(columns=["ano", "mes"])
         gympass["data"]=gympass["data"].dt.strftime("%d/%m/%Y")
         st.dataframe(fluxo if tabela=="Saldo" else gympass, use_container_width=True, height=550, hide_index=True)
         
