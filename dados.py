@@ -43,7 +43,10 @@ def valida_integridade_referencial(dfs):
     passa=True
     for condicao in integridade:
         tabela, campo, campo_val=condicao
-        check=dfs[tabela][campo].isin(dfs["validacao"][campo_val].to_list()).all()
+        if campo_val=="viagem_grupo":
+            check=dfs[tabela][campo].isin(dfs["validacao"]["viagem"].to_list()+dfs["validacao"]["grupo"].to_list()).all()
+        else:
+            check=dfs[tabela][campo].isin(dfs["validacao"][campo_val].to_list()).all()
         if not check:
             st.write(f"Coluna {campo} da aba {tabela} tem valores que não pertencem à coluna {campo_val} da aba de validação")
         passa=passa and check
@@ -112,7 +115,7 @@ def agrega_dfs(dados):
     despesa_anual_tipo=despesa_anual_tipo.merge(anual[["data", "despesa"]], on="data")
     despesa_anual_tipo["porcentagem"]=despesa_anual_tipo["valor"]/despesa_anual_tipo["despesa"]
     
-    custo_viagem=viagem.merge(despesa[despesa["viagem"].notna()].groupby("viagem").agg({"valor":"sum"}), on="viagem").merge(datas[["data", "ano_fatura", "mes_fatura"]], left_on="data_de_ida", right_on="data", how="left")
+    custo_viagem=viagem.merge(despesa[despesa["grupo"].notna()].groupby("grupo").agg({"valor":"sum"}), left_on="viagem", right_on="grupo").merge(datas[["data", "ano_fatura", "mes_fatura"]], left_on="data_de_ida", right_on="data", how="left")
     custo_viagem["dias"]=(custo_viagem["data_de_volta"]-custo_viagem["data_de_ida"]).dt.days+1
     custo_viagem["custo"]=custo_viagem["valor"]/(custo_viagem["numero_de_pessoas"]*custo_viagem["dias"])
     custo_viagem=custo_viagem.fillna(0).round(2)
@@ -121,6 +124,9 @@ def agrega_dfs(dados):
     despesas_parceladas["um"]=1
     despesas_parceladas["data"]=pd.to_datetime({"year":despesas_parceladas["ano_fatura"],"month": despesas_parceladas["mes_fatura"], "day":despesas_parceladas["um"]})
     despesas_parceladas=despesas_parceladas.fillna(0).round(2)
+
+    despesas_grupos=despesa[(despesa["grupo"]!="nan") & (despesa["grupo"].isin(validacao["grupo"].to_list()))].groupby("grupo").agg({"valor":"sum"}).reset_index()
+    despesas_grupos=despesas_grupos.fillna(0).round(2)
     
-    return validacao, dia_fatura, datas, fluxo, aglomerado_dia, aglomerado_dia_tipo, gympass_atividades, gympass_mes, anual, despesa_anual_tipo, custo_viagem, despesas_parceladas
+    return validacao, dia_fatura, datas, fluxo, aglomerado_dia, aglomerado_dia_tipo, gympass_atividades, gympass_mes, anual, despesa_anual_tipo, custo_viagem, despesas_parceladas, despesas_grupos
 

@@ -274,3 +274,43 @@ def gera_visu_parceladas(dados, height):
         )
     
     return grafico.configure_title(fontSize=24)
+
+def gera_visu_grupos(dados, height):
+    dados["texto"]="R$"+dados["valor"].astype(str)
+    dados["y"]=dados["valor"]/2
+
+    if height:
+        grafico= alt.Chart(dados).mark_bar(size=height/4)
+    else:
+        grafico= alt.Chart(dados).mark_bar()
+    grafico=grafico.encode(
+        x=alt.X("grupo:N", axis=alt.Axis(title=None, labelAngle=0)),
+        y=alt.Y("valor:Q", axis=alt.Axis(title=None))
+    )
+
+    if height:
+        grafico+= alt.Chart(dados).mark_text(size=height/20, color="white").encode(
+            x=alt.X("grupo:N", axis=alt.Axis(title=None, labelAngle=0)),
+            y=alt.Y("y:Q", axis=alt.Axis(title=None)),
+            text="texto",
+            tooltip=alt.value(None)
+        )
+    else:
+        grafico+= alt.Chart(dados).mark_text(color="white").encode(
+            x=alt.X("grupo:N", axis=alt.Axis(title=None, labelAngle=0)),
+            y=alt.Y("y:Q", axis=alt.Axis(title=None)),
+            text="texto",
+            tooltip=alt.value(None)
+        )
+
+    if height:
+        grafico=grafico.properties(
+            title="Gasto por grupo",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Gasto por grupo"
+        )
+
+    return grafico.configure_title(fontSize=24)

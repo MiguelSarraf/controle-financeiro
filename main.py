@@ -91,7 +91,7 @@ match st.session_state.status:
     case "PAINEL":
         st.set_page_config(layout = "wide")
         
-        _, dia_fatura, datas, _, aglomerado_dia, aglomerado_dia_tipo, gympass_atividades, gympass_mes, anual, despesa_anual_tipo, custo_viagem ,despesas_parceladas=agrega_dfs(st.session_state.dados)
+        _, dia_fatura, datas, _, aglomerado_dia, aglomerado_dia_tipo, gympass_atividades, gympass_mes, anual, despesa_anual_tipo, custo_viagem ,despesas_parceladas, despesas_grupos=agrega_dfs(st.session_state.dados)
         window_width=streamlit_js_eval(js_expressions='screen.width', key = 'SCR')
 
         colunas = st.columns(5)
@@ -114,9 +114,9 @@ match st.session_state.status:
         mes=colunas[1].selectbox("Mês", meses, index=int(np.where(meses==hoje.month)[0][0]) if hoje.month in meses else 0)
         media_movel=colunas[2].selectbox("Meses média móvel", range(1,7), index=2)
         
-        aglomerado_dia=aglomerado_dia[(aglomerado_dia["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, dia_fatura)))]
+        aglomerado_dia=aglomerado_dia[(aglomerado_dia["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), mes%12+1, dia_fatura)))]
         aglomerado_dia["data"]=aglomerado_dia["data"].dt.date
-        aglomerado_dia_tipo=aglomerado_dia_tipo[(aglomerado_dia_tipo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia_tipo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, dia_fatura)))]
+        aglomerado_dia_tipo=aglomerado_dia_tipo[(aglomerado_dia_tipo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (aglomerado_dia_tipo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), mes%12+1, dia_fatura)))]
         aglomerado_dia_tipo["data"]=aglomerado_dia_tipo["data"].dt.date
         gympass_atividades=gympass_atividades[(gympass_atividades["ano"]==int(ano))&(gympass_atividades["mes"]==int(mes))]
         gympass_mes=gympass_mes[gympass_mes["ano"]==int(ano)]
@@ -139,19 +139,20 @@ match st.session_state.status:
                 if not gympass_atividades.empty: colunas[0].altair_chart(gera_visu_gympass_usos(gympass_atividades, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
                 if not gympass_mes.empty: colunas[1].altair_chart(gera_visu_gympass_mes(gympass_mes, media_movel, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
 
-        if not anual.empty or not despesa_anual_tipo.empty:
+        if not anual.empty or not despesa_anual_tipo.empty or not despesas_parceladas.empty :
             st.header("Resultados anuais")
             with st.expander(""):
                 colunas = st.columns(2)
                 if not anual.empty: colunas[0].altair_chart(gera_visu_anual(anual, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
                 if not despesa_anual_tipo.empty: colunas[1].altair_chart(gera_visu_tipo_anual(despesa_anual_tipo, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
+                if not despesas_parceladas.empty: colunas[0].altair_chart(gera_visu_parceladas(despesas_parceladas, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
 
-        if not custo_viagem.empty or not despesas_parceladas.empty:
+        if not custo_viagem.empty or not despesas_grupos.empty:
             st.header("Outros resultados")
             with st.expander(""):
                 colunas = st.columns(2)
                 if not custo_viagem.empty: colunas[0].altair_chart(gera_visu_viagens(custo_viagem, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
-                if not despesas_parceladas.empty: colunas[1].altair_chart(gera_visu_parceladas(despesas_parceladas, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
+                if not despesas_grupos.empty: colunas[1].altair_chart(gera_visu_grupos(despesas_grupos, window_width/4 if st.session_state.is_session_pc else None), use_container_width=True)
         
         if fluxo_bot:
             st.session_state.status="FLUXO"
@@ -183,10 +184,10 @@ match st.session_state.status:
         mes=colunas[1].selectbox("Mês", meses, index=int(np.where(meses==hoje.month)[0][0]) if hoje.month in meses else 0)
         tabela=colunas[2].selectbox("Tabela", ["Saldo", "Gympass"], index=0)
         
-        fluxo=fluxo[(fluxo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (fluxo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, dia_fatura)))].drop(columns=["ano_fatura", "mes_fatura"])
+        fluxo=fluxo[(fluxo["data"]>=pd.to_datetime(date(ano, mes, dia_fatura))) & (fluxo["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), mes%12+1, dia_fatura)))].drop(columns=["ano_fatura", "mes_fatura"])
         fluxo["data"]=fluxo["data"].dt.strftime("%d/%m/%Y")
         fluxo["valor"]=fluxo["valor"].apply(lambda val: '${:.2f}'.format(val) if val>0 else '-${:.2f}'.format(-val))
-        gympass=gympass[(gympass["data"]>=pd.to_datetime(date(ano, mes, 1))) & (gympass["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), (mes+1)%13, 1)))].drop(columns=["ano", "mes"])
+        gympass=gympass[(gympass["data"]>=pd.to_datetime(date(ano, mes, 1))) & (gympass["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), mes%12+1, 1)))].drop(columns=["ano", "mes"])
         gympass["data"]=gympass["data"].dt.strftime("%d/%m/%Y")
         st.dataframe(fluxo if tabela=="Saldo" else gympass, use_container_width=True, height=550, hide_index=True)
         

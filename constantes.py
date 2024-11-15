@@ -9,6 +9,7 @@ schemas={
         "Atividade no gympass":"str",
         "Unidade do Gympass":"str",
         "Viagem":"str",
+        "Grupo": "str",
         "Fechamento da fatura":"Int32"
     },
     "despesa":{
@@ -17,7 +18,7 @@ schemas={
         "Tipo":"str",
         "Transação":"str",
         "Conta":"str",
-        "Viagem":"str"
+        "Grupo":"str"
     },
     "receita":{
         "Descrição":"str",
@@ -43,7 +44,7 @@ integridade=(
     ("despesa", "tipo", "tipo_de_despesa"),
     ("despesa", "transacao", "tipo_de_transacao_de_despesa"),
     ("despesa", "conta", "conta"),
-    ("despesa", "viagem", "viagem"),
+    ("despesa", "grupo", "viagem_grupo"),
     ("receita", "transacao", "tipo_de_transacao_de_receita"),
     ("receita", "conta", "conta"),
     ("gympass", "atividade", "atividade_no_gympass"),
