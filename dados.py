@@ -82,7 +82,7 @@ def agrega_dfs(dados):
     despesa_receita=pd.concat([despesa[["data", "descricao", "valor", "tipo"]], receita[["data", "descricao", "valor"]]])
     despesa["valor"]=-despesa["valor"]
     
-    fluxo=despesa_receita.merge(datas[["data", "ano_fatura", "mes_fatura"]], on="data").fillna("").sort_values("data")
+    fluxo=despesa_receita.merge(datas[["data", "ano_fatura", "mes_fatura"]], on="data").fillna("").sort_values("data", kind="stable")
     fluxo=fluxo.fillna(0).round(2)
     
     aglomerado_dia=datas[["data", "ano_fatura", "mes_fatura"]].merge(despesa_receita.groupby("data").agg({"valor":"sum"}).reset_index(), on="data", how="left").set_index("data").groupby(["ano_fatura", "mes_fatura"]).agg({"valor":"cumsum"}).fillna(method='ffill').reset_index()

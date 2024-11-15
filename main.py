@@ -165,7 +165,7 @@ match st.session_state.status:
         st.set_page_config(layout = "centered")
         
         gympass=st.session_state.dados["gympass"]
-        _, dia_fatura, datas, fluxo, _, _, _, _, _, _, _, _=agrega_dfs(st.session_state.dados)
+        _, dia_fatura, datas, fluxo, _, _, _, _, _, _, _, _, _=agrega_dfs(st.session_state.dados)
 
         colunas = st.columns(5)
         painel_bot=colunas[0].button("Painel")
@@ -189,7 +189,12 @@ match st.session_state.status:
         fluxo["valor"]=fluxo["valor"].apply(lambda val: '${:.2f}'.format(val) if val>0 else '-${:.2f}'.format(-val))
         gympass=gympass[(gympass["data"]>=pd.to_datetime(date(ano, mes, 1))) & (gympass["data"]<pd.to_datetime(date(ano+(1 if mes==12 else 0), mes%12+1, 1)))].drop(columns=["ano", "mes"])
         gympass["data"]=gympass["data"].dt.strftime("%d/%m/%Y")
-        st.dataframe(fluxo if tabela=="Saldo" else gympass, use_container_width=True, height=550, hide_index=True)
+
+        def colore_valor(val):
+            color = 'red' if val[0]=="-" else 'blue'
+            return f'color: {color}'
+
+        st.dataframe(fluxo.rename(columns={"data":"Data", "descricao":"Descrição", "valor":"Valor", "tipo":"tipo"}).style.applymap(colore_valor, subset=['Valor']) if tabela=="Saldo" else gympass.rename(columns={"data":"Data", "atividade":"Atividade", "unidade":"Unidade"}), use_container_width=True, height=550, hide_index=True)
         
         if painel_bot:
             st.session_state.status="PAINEL"
