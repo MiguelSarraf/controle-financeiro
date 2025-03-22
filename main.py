@@ -33,7 +33,7 @@ match st.session_state.status:
         iniciar=st.button("Carregue meu painel")
 
         ua_string = st_javascript("""window.navigator.userAgent;""")
-        user_agent = parse(ua_string)
+        user_agent = parse(ua_string if ua_string else "")
         st.session_state.is_session_pc = user_agent.is_pc
         
         if iniciar:
