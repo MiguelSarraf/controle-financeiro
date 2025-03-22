@@ -52,15 +52,14 @@ def valida_integridade_referencial(dfs):
         passa=passa and check
     return passa
 
-def agrega_dfs(dados):
-    validacao=dados["validacao"]
-    despesa=dados["despesa"]
-    receita=dados["receita"]
-    gympass=dados["gympass"]
-    viagem=dados["viagem"]
-    
-    dia_fatura=validacao["fechamento_da_fatura"].iloc[0]
-    
+def gera_anos(despesa, dia_fatura):
+    return (despesa["data"] - DateOffset(days = dia_fatura)).dt.year.unique()
+
+def gera_meses(despesa, dia_fatura, ano):
+    despesa["data"] = despesa["data"] - DateOffset(days = dia_fatura)
+    return despesa[despesa["data"].dt.year == ano]["data"].dt.month.unique()
+
+def gera_datas_das_despesas(despesa, dia_fatura):
     datas=despesa.copy()
     datas["ano"]=datas["data"].dt.year
     datas["mes"]=datas["data"].dt.month
@@ -77,56 +76,224 @@ def agrega_dfs(dados):
     datas["ano_fatura"]=datas["ano_fatura"].dt.year
     datas["mes_fatura"]=np.where(datas["eh_mes_anterior"], datas["data"]-DateOffset(months=1), datas["data"])
     datas["mes_fatura"]=datas["mes_fatura"].dt.month
-    
-    despesa["valor"]=-despesa["valor"]
-    despesa_receita=pd.concat([despesa[["data", "descricao", "valor", "tipo"]], receita[["data", "descricao", "valor"]]])
-    despesa["valor"]=-despesa["valor"]
-    
-    fluxo=despesa_receita.merge(datas[["data", "ano_fatura", "mes_fatura"]], on="data").fillna("").sort_values("data", kind="stable")
-    fluxo=fluxo.fillna(0).round(2)
-    
-    aglomerado_dia=datas[["data", "ano_fatura", "mes_fatura"]].merge(despesa_receita.groupby("data").agg({"valor":"sum"}).reset_index(), on="data", how="left").set_index("data").groupby(["ano_fatura", "mes_fatura"]).agg({"valor":"cumsum"}).fillna(method='ffill').reset_index()
-    aglomerado_dia=aglomerado_dia.fillna(0).round(2)
-    
-    aglomerado_dia_tipo=datas[["data", "ano_fatura", "mes_fatura"]].merge(despesa.groupby(["data", "tipo"]).agg({"valor":"sum"}).reset_index(), on="data", how="left")
-    aglomerado_dia_tipo=aglomerado_dia_tipo.fillna(0).round(2)
-    
-    gympass["ano"]=gympass["data"].dt.year
-    gympass["mes"]=gympass["data"].dt.month
-    gympass_atividades=gympass.groupby(["ano", "mes", "atividade", "unidade"]).count().reset_index().rename(columns={"data":"num_usos"})
 
-    gympass_mes=gympass.groupby(["ano", "mes"]).count().reset_index().rename(columns={"data":"num_usos"}).merge(despesa[despesa["descricao"]=="Gympass"].merge(datas, on="data", how="inner").groupby(["ano_fatura", "mes_fatura"])["valor"].sum().reset_index(), left_on=["ano", "mes"], right_on=["ano_fatura", "mes_fatura"])
-    gympass_mes["custo_uso"]=(gympass_mes["valor"]/gympass_mes["num_usos"]).round(2)
-    
-    despesa=despesa.merge(datas[["data", "ano_fatura", "mes_fatura"]], on="data", how="left")
-    receita=receita.merge(datas[["data", "ano_fatura", "mes_fatura"]], on="data", how="left")
-    
-    despesa_anual_tipo=despesa.groupby(["ano_fatura", "mes_fatura", "tipo"]).agg({"valor":"sum"}).reset_index()
-    despesa_anual_tipo["um"]=1
-    despesa_anual_tipo["data"]=pd.to_datetime({"year":despesa_anual_tipo["ano_fatura"],"month": despesa_anual_tipo["mes_fatura"], "day":despesa_anual_tipo["um"]})
-    despesa_anual_tipo=despesa_anual_tipo.fillna(0).round(2)
-    
-    anual=despesa.groupby(["ano_fatura", "mes_fatura"]).agg({"valor":"sum"}).rename(columns={"valor":"despesa"}).reset_index().merge(receita.groupby(["ano_fatura", "mes_fatura"]).agg({"valor":"sum"}).rename(columns={"valor":"receita"}).reset_index(), on=["ano_fatura", "mes_fatura"], how="outer")
-    anual=anual.fillna(0).round(2)
-    anual["liquido"]=anual["receita"]-anual["despesa"]
-    anual["um"]=1
-    anual["data"]=pd.to_datetime({"year":anual["ano_fatura"],"month": anual["mes_fatura"], "day":anual["um"]})
-    
-    despesa_anual_tipo=despesa_anual_tipo.merge(anual[["data", "despesa"]], on="data")
-    despesa_anual_tipo["porcentagem"]=despesa_anual_tipo["valor"]/despesa_anual_tipo["despesa"]
-    
-    custo_viagem=viagem.merge(despesa[despesa["grupo"].notna()].groupby("grupo").agg({"valor":"sum"}), left_on="viagem", right_on="grupo").merge(datas[["data", "ano_fatura", "mes_fatura"]], left_on="data_de_ida", right_on="data", how="left")
-    custo_viagem["dias"]=(custo_viagem["data_de_volta"]-custo_viagem["data_de_ida"]).dt.days+1
-    custo_viagem["custo"]=custo_viagem["valor"]/(custo_viagem["numero_de_pessoas"]*custo_viagem["dias"])
-    custo_viagem=custo_viagem.fillna(0).round(2)
-    
-    despesas_parceladas=despesa[(despesa["descricao"].str.contains("/")) & (despesa["data"].dt.day==dia_fatura)].groupby(["ano_fatura", "mes_fatura"]).agg({"valor":"sum"}).reset_index()
-    despesas_parceladas["um"]=1
-    despesas_parceladas["data"]=pd.to_datetime({"year":despesas_parceladas["ano_fatura"],"month": despesas_parceladas["mes_fatura"], "day":despesas_parceladas["um"]})
-    despesas_parceladas=despesas_parceladas.fillna(0).round(2)
+    return datas
 
-    despesas_grupos=despesa[(despesa["grupo"]!="nan") & (despesa["grupo"].isin(validacao["grupo"].to_list()))].groupby("grupo").agg({"valor":"sum"}).reset_index()
-    despesas_grupos=despesas_grupos.fillna(0).round(2)
-    
-    return validacao, dia_fatura, datas, fluxo, aglomerado_dia, aglomerado_dia_tipo, gympass_atividades, gympass_mes, anual, despesa_anual_tipo, custo_viagem, despesas_parceladas, despesas_grupos
+def gera_dia_fatura(validacao):
+    return validacao["fechamento_da_fatura"].iloc[0]
 
+def gera_hoje(referencia):
+    hoje=pd.DataFrame(index=[0])
+    hoje["data"]=pd.Timestamp.today()
+    hoje["data"]=hoje["data"].dt.date
+    hoje=hoje[pd.to_datetime(hoje["data"]).isin(referencia["data"])]
+
+    return hoje
+
+def gera_datas(inicial, final, segunda_variavel=(None, [None])):
+    dias_no_mes = (final-inicial).days
+
+    nome, valores = segunda_variavel
+
+    datas = {"data":[inicial + relativedelta(days=dia) for dia in range(dias_no_mes)][:]*len(valores)}
+    if nome:
+        datas[nome] = []
+        for valor in valores:
+            datas[nome] += [valor][:]*dias_no_mes
+
+    datas = pd.DataFrame(datas)
+
+    datas["data"] = pd.to_datetime(datas["data"])
+
+    return datas
+
+def gera_datas_do_mes(fatura, segunda_variavel=(None, [None])):
+    proxima_fatura = fatura + relativedelta(months=1)
+
+    return gera_datas(fatura, proxima_fatura, segunda_variavel)
+
+def gera_datas_do_ano(fatura, segunda_variavel=(None, [None])):
+    primeira_fatura = date(fatura.year, 1, fatura.day)
+    ultima_fatura = date(fatura.year, 12, fatura.day) + relativedelta(months=1)
+
+    datas = gera_datas(primeira_fatura, ultima_fatura, segunda_variavel)
+    datas["ano"] = fatura.year
+    datas["mes"] = np.where(
+        datas["data"].dt.day < fatura.day,
+        datas["data"].dt.month - 1,
+        datas["data"].dt.month
+    )
+
+    return datas
+
+def cria_kpis(despesa, receita, gympass, fatura):
+    kpis = {"mensais":{}, "gympass":{}, "anuais":{}}
+    datas_mes = gera_datas_do_mes(fatura)
+    datas_ano = gera_datas_do_ano(fatura)
+
+    custo_gympass = despesa[despesa["descricao"] == "Gympass"][["data", "valor"]]
+    custo_gympass["ano"] = custo_gympass["data"].dt.year
+    custo_gympass["mes"] = custo_gympass["data"].dt.month
+
+    gympass["ano"] = gympass["data"].dt.year
+    gympass["mes"] = gympass["data"].dt.month
+    gympass = gympass[gympass["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"data":"count"}).reset_index().rename(columns={"data":"usos"}).merge(custo_gympass, on=["ano", "mes"])
+    gympass["custo_por_aula"] = gympass["valor"]/gympass["usos"]
+    maior_uso = gympass[gympass["usos"] == max(gympass["usos"])]
+    menor_uso = gympass[gympass["usos"] == min(gympass["usos"])]
+
+    despesa = despesa[despesa["data"].isin(datas_ano["data"])]
+    despesa_parcelada = despesa[(despesa["data"].dt.day == fatura.day) & (despesa["descricao"].str.contains("/"))]
+    receita = receita[receita["data"].isin(datas_ano["data"])]
+
+    kpis["anuais"]["Ganho total"] = (f'R${round(sum(receita["valor"]), 2)}', "blue")
+    kpis["anuais"]["Gasto total"] = (f'R${round(sum(despesa["valor"]), 2)}', "red")
+    kpis["anuais"]["Saldo final"] = (f'R${round(sum(receita["valor"]) - sum(despesa["valor"]), 2)}', "green")
+    kpis["anuais"]["Total parcelado"] = (f'R${round(sum(despesa_parcelada["valor"]), 2)}', "orange")
+
+    despesa = despesa[despesa["data"].isin(datas_mes["data"])]
+    despesa_optativa = despesa[despesa["tipo"]=="optativo"]
+    receita = receita[receita["data"].isin(datas_mes["data"])]
+
+    kpis["mensais"]["Ganho total"] = (f'R${round(sum(receita["valor"]), 2)}', "blue")
+    kpis["mensais"]["Gasto total"] = (f'R${round(sum(despesa["valor"]), 2)}', "red")
+    kpis["mensais"]["Saldo final"] = (f'R${round(sum(receita["valor"]) - sum(despesa["valor"]), 2)}', "green")
+    kpis["mensais"]["Gasto optativo"] = (f'{round((sum(despesa_optativa["valor"]) / sum(despesa["valor"]))*100, 2)}%', "orange")
+
+    kpis["gympass"]["Total de aulas"] = (f'{sum(gympass["usos"])}', "orange")
+    kpis["gympass"]["Mais barato"] = (f'R${round(maior_uso["custo_por_aula"].iloc[0], 2)}/check-in ({maior_uso["usos"].iloc[0]} usos)', "green")
+    kpis["gympass"]["Mais caro"] = (f'R${round(menor_uso["custo_por_aula"].iloc[0], 2)}/check-in ({menor_uso["usos"].iloc[0]} usos)', "red")
+
+    return kpis
+
+def colore_valor(val):
+    color = 'red' if val[0]=="-" else 'blue'
+    return f'color: {color}'
+
+def agrega_saldo_por_dia(despesa, receita, fatura):
+    datas=gera_datas_do_mes(fatura)
+
+    despesa = despesa[despesa["data"].isin(datas["data"])].groupby("data").agg({"valor":"sum"}).reset_index()
+    receita = receita[receita["data"].isin(datas["data"])].groupby("data").agg({"valor":"sum"}).reset_index()
+
+    despesa["despesa"] = despesa["valor"].cumsum()
+    receita["receita"] = receita["valor"].cumsum()
+
+    saldo = datas.merge(receita[["data", "receita"]], on="data", how="left").merge(despesa[["data", "despesa"]], on="data", how="left")
+    saldo["saldo"] = saldo["receita"].fillna(method='ffill').fillna(0)-saldo["despesa"].fillna(method='ffill').fillna(0)
+
+    proximo_saldo = saldo[["data", "saldo"]].rename(columns={"saldo": "proximo_saldo"})
+    proximo_saldo["data"] = pd.to_datetime(proximo_saldo["data"].dt.date + relativedelta(days=-1))
+    saldo = saldo.merge(proximo_saldo, on="data", how="left")
+
+    saldo["positivos"] = np.where((saldo["saldo"] > 0) | (saldo["proximo_saldo"] > 0), saldo["saldo"], np.nan)
+    saldo["negativos"] = np.where((saldo["saldo"] < 0) | (saldo["proximo_saldo"] < 0), saldo["saldo"], np.nan)
+
+    return saldo
+
+def agrega_tipos_de_despesa(despesa, fatura):
+    datas=gera_datas_do_mes(fatura, ("tipo", despesa["tipo"].dropna().unique()))
+
+    despesa = despesa[despesa["data"].isin(datas["data"])].groupby(["data", "tipo"]).agg({"valor":"sum"}).reset_index()
+
+    despesa = datas.merge(despesa, on=["data", "tipo"], how="left")
+
+    despesa["valor"] = despesa["valor"].fillna(0)
+
+    return despesa
+
+def agrega_usos_gympass_no_mes(gympass, fatura):
+    return gympass[(gympass["data"].dt.month == fatura.month) & (gympass["data"].dt.year == fatura.year)].groupby(["unidade", "atividade"]).agg({"data":"count"}).reset_index().rename(columns={"data": "usos"})
+
+def agrega_custo_gympass_por_mes(despesa, gympass, fatura, media_movel):
+    custo_gympass = despesa[despesa["descricao"] == "Gympass"][["data", "valor"]]
+    custo_gympass["ano"] = custo_gympass["data"].dt.year
+    custo_gympass["mes"] = custo_gympass["data"].dt.month
+    custo_gympass = custo_gympass.drop(columns=["data"]).drop_duplicates()
+
+    gympass["ano"] = gympass["data"].dt.year
+    gympass["mes"] = gympass["data"].dt.month
+    gympass = gympass.drop(columns=["data"])
+    gympass = gympass[gympass["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"atividade":"count"}).reset_index().rename(columns={"atividade":"usos"}).merge(custo_gympass, on=["ano", "mes"])
+    gympass["custo_por_aula"] = gympass["valor"]/gympass["usos"]
+    gympass["usos_movel"] = gympass["usos"]
+    gympass["valor_movel"] = gympass["valor"]
+
+    for movimento in range(1, media_movel+1):
+        gympass_movel = gympass.copy()[["mes", "usos", "valor"]].rename(columns={"usos":"usos_movel_var", "valor":"valor_movel_var"})
+        gympass_movel["mes"] += movimento
+        gympass = gympass.merge(gympass_movel, on="mes", how="left")
+        gympass["usos_movel"] += gympass["usos_movel_var"]
+        gympass["valor_movel"] += gympass["valor_movel_var"]
+        gympass = gympass.drop(columns=["usos_movel_var", "valor_movel_var"])
+
+    gympass["data"] = np.vectorize(date)(gympass["ano"], gympass["mes"], 1)
+    gympass["custo_por_aula_movel"] = gympass["valor_movel"] / gympass["usos_movel"]
+    
+    return gympass
+
+def agrega_saldo_por_mes(despesa, receita, fatura):
+    datas = gera_datas_do_ano(fatura)
+
+    despesa = despesa.merge(datas, on="data")
+    receita = receita.merge(datas, on="data")
+
+    despesa = despesa[despesa["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"valor":"sum"}).rename(columns={"valor":"despesa"}).reset_index()
+    receita = receita[receita["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"valor":"sum"}).rename(columns={"valor":"receita"}).reset_index()
+
+    saldo = despesa.merge(receita, on=["ano", "mes"], how="left").fillna(0)
+
+    saldo["data"] = pd.to_datetime(np.vectorize(date)(saldo["ano"], saldo["mes"], 1))
+    saldo["saldo"] = saldo["receita"] - saldo["despesa"]
+
+    return saldo
+
+def agrega_despesa_parceladas(despesa, fatura):
+    datas = gera_datas_do_ano(fatura)
+    datas = datas[datas["data"].dt.day == fatura.day]
+
+    return despesa[(despesa["data"].isin(datas["data"])) & (despesa["descricao"].str.contains("/"))].groupby("data").agg({"valor":"sum"}).reset_index()
+
+def agrega_custo_das_viagens(despesa, viagem, fatura):
+    viagem["dias"] = (viagem["data_de_volta"] - viagem["data_de_ida"]).dt.days + 1
+    viagem["ano"] = viagem["data_de_ida"].dt.year
+    
+    viagens = viagem[viagem["ano"] == fatura.year].merge(despesa.groupby("grupo").agg({"valor":"sum"}).reset_index(), left_on="viagem", right_on="grupo")
+    viagens["custo"] = viagens["valor"] / (viagens["numero_de_pessoas"] * viagens["dias"])
+
+    viagens["texto"] = "R$" + viagens["custo"].round(2).astype(str)
+    viagens["y"] = viagens["custo"] / 2
+    
+    return viagens
+
+def agrega_custo_dos_grupos(despesa, validacao, fatura):
+    grupos = despesa[(despesa["data"].dt.year == fatura.year) & (despesa["grupo"].isin(validacao["grupo"])) & (despesa["grupo"] != "nan")].groupby("grupo").agg({"valor":"sum"}).reset_index()
+
+    grupos["texto"] = "R$" + grupos["valor"].round(2).astype(str)
+    grupos["y"] = grupos["valor"] / 2
+
+    return grupos
+
+
+def agrega_fluxo_saldo(despesa, receita, fatura):
+    datas=gera_datas_do_mes(fatura)
+
+    despesa = despesa[despesa["data"].isin(datas["data"])].reset_index()[["data", "descricao", "valor", "tipo"]]
+    receita = receita[receita["data"].isin(datas["data"])].reset_index()[["data", "descricao", "valor"]]
+
+    receita["tipo"] = ""
+    despesa["valor"] = -despesa["valor"]
+
+    fluxo = pd.concat([despesa, receita]).reset_index().sort_values("data", kind = "stable")
+
+    fluxo["data"] = fluxo["data"].dt.strftime("%d/%m/%Y")
+    fluxo["valor"] = fluxo["valor"].apply(lambda val: 'R${:.2f}'.format(val) if val>0 else '-R${:.2f}'.format(-val))
+
+    return fluxo.rename(columns={"data":"Data", "descricao":"Descrição", "valor":"Valor", "tipo":"tipo"}).style.applymap(colore_valor, subset=['Valor'])
+
+def agrega_fluxo_gympass(gympass, fatura):
+    gympass = gympass[(gympass["data"].dt.month == fatura.month) & (gympass["data"].dt.year == fatura.year)][["data", "atividade", "unidade"]]
+
+    gympass["data"]=gympass["data"].dt.strftime("%d/%m/%Y")
+
+    return gympass.rename(columns={"data":"Data", "atividade":"Atividade", "unidade":"Unidade"})
