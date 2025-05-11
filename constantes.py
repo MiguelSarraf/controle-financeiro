@@ -36,6 +36,10 @@ schemas={
         "Viagem":"str",
         "Número de pessoas":"int",
     },
+    "aplicacoes":{
+        "Aplicação":"str",
+        "Valor inicial":"float",
+    },
     "gids":{
         "Aba":"str",
         "GID":"str"
@@ -65,6 +69,9 @@ converters={
         "Data":pd.to_datetime,
     },
     "gympass":{
+        "Data":pd.to_datetime,
+    },
+    "aplicacoes":{
         "Data":pd.to_datetime,
     },
     "viagem":{

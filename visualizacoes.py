@@ -203,6 +203,76 @@ def despesa_parceladas(despesa, fatura, height):
 
 #endregion
 
+#region Investimentos
+
+def rendimentos_por_mes(receita, fatura, height):
+    rendimentos_mes = agrega_rendimentos_por_mes(receita, fatura)
+
+    grafico = alt.Chart(rendimentos_mes)
+
+    grafico=grafico.mark_line().encode(
+        x=alt.X("data:T", axis=alt.Axis(title=None, format="%b", labelAngle=0)),
+        y=alt.Y("valor:Q", axis=alt.Axis(title=None, format="$.2f")),
+        color=alt.Color("aplicacao:N", legend=alt.Legend(title="Aplicação")),
+        tooltip=[alt.Tooltip("data:T", format="%b/%Y", title="Mês"), alt.Tooltip("aplicacao:N", title="Aplicação"), alt.Tooltip("valor:Q", format="$.2f", title="Ganho")]
+    )
+    
+    if height:
+        grafico=grafico.properties(
+            title="Ganhos em investimento por mês",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Ganhos em investimento por mês"
+        )
+    
+    return grafico.configure_title(fontSize=24)
+
+def rendimentos(receita, aplicacoes, height):
+    aplicacoes = agrega_rendimentos(aplicacoes, receita)
+
+    grafico_base = alt.Chart(aplicacoes)
+
+    grafico = grafico_base.mark_bar(size=height/4 if height else None).encode(
+        x=alt.X("aplicacao:N", axis=alt.Axis(title=None, labelAngle=0)),
+        y=alt.Y("sum(valor):Q", axis=alt.Axis(title=None)),
+        color=alt.Color("tipo:N", legend=None),
+        order=alt.Order("order:Q"),
+        tooltip=[alt.Tooltip("aplicacao:N", title="Aplicação"), alt.Tooltip("valor:Q", title="Custo")]
+    )
+
+    if height:
+        grafico+= grafico_base.mark_text(size=height/20, color="black").encode(
+            x=alt.X("aplicacao:N", axis=alt.Axis(title=None, labelAngle=0)),
+            y=alt.Y("y:Q", axis=alt.Axis(title=None)),
+            order=alt.Order("order:Q"),
+            text="texto",
+            tooltip=alt.value(None)
+        )
+    else:
+        grafico+= grafico_base.mark_text(color="black").encode(
+            x=alt.X("aplicacao:N", axis=alt.Axis(title=None, labelAngle=0)),
+            y=alt.Y("y:Q", axis=alt.Axis(title=None)),
+            order=alt.Order("order:Q"),
+            text="texto",
+            tooltip=alt.value(None)
+        )
+
+    if height:
+        grafico=grafico.properties(
+            title="Ganho por aplicação",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Ganho por aplicação"
+        )
+
+    return grafico.configure_title(fontSize=24)
+
+#endregion
+
 #region Outros resultados
 
 def custo_das_viagens(despesa, viagem, fatura, height):

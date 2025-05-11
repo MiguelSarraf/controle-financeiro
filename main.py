@@ -60,12 +60,14 @@ match st.session_state.status:
             receita=aplica_schema(conn.read(spreadsheet = url, worksheet=gids["Receita"], ttl=1), schemas["receita"], list(converters["receita"]))
             gympass=aplica_schema(conn.read(spreadsheet = url, worksheet=gids["Gympass"], ttl=1), schemas["gympass"], list(converters["gympass"]))
             viagem=aplica_schema(conn.read(spreadsheet = url, worksheet=gids["Viagem"], ttl=1), schemas["viagem"], list(converters["viagem"]))
+            aplicacoes=aplica_schema(conn.read(spreadsheet = url, worksheet=gids["Aplicações"], ttl=1), schemas["aplicacoes"], list(converters["aplicacoes"]))
         else:
             validacao=pd.read_excel(url, sheet_name="Validação", dtype=schemas["validacao"], na_filter = False)
             despesa=pd.read_excel(url, sheet_name="Despesa", dtype=schemas["despesa"], na_filter = False, converters=converters["despesa"])
             receita=pd.read_excel(url, sheet_name="Receita", dtype=schemas["receita"], na_filter = False, converters=converters["receita"])
             gympass=pd.read_excel(url, sheet_name="Gympass", dtype=schemas["gympass"], na_filter = False, converters=converters["gympass"])
             viagem=pd.read_excel(url, sheet_name="Viagem", dtype=schemas["viagem"], na_filter = False, converters=converters["viagem"])
+            aplicacoes=pd.read_excel(url, sheet_name="Aplicações", dtype=schemas["aplicacoes"], na_filter = False, converters=converters["aplicacoes"])
 
         st.write("Terminei, vou verificar se tem algum problema com ela")
         assert_validacao=valida_dataframe(validacao, set(schemas["validacao"].keys())|set(converters["validacao"].keys()), "Validação")
@@ -73,10 +75,11 @@ match st.session_state.status:
         assert_receita=valida_dataframe(receita, set(schemas["receita"].keys())|set(converters["receita"].keys()), "Receita")
         assert_gympass=valida_dataframe(gympass, set(schemas["gympass"].keys())|set(converters["gympass"].keys()), "Gympass")
         assert_viagem=valida_dataframe(viagem, set(schemas["viagem"].keys())|set(converters["viagem"].keys()), "Viagem")
-        dados=ajusta_dataframes(validacao, despesa, receita, gympass, viagem)
+        assert_aplicacoes=valida_dataframe(aplicacoes, set(schemas["aplicacoes"].keys())|set(converters["aplicacoes"].keys()), "Aplicações")
+        dados=ajusta_dataframes(validacao, despesa, receita, gympass, viagem, aplicacoes)
         assert_integridade=valida_integridade_referencial(dados)
         
-        if all([assert_validacao, assert_despesa, assert_receita, assert_gympass, assert_viagem, assert_integridade]):
+        if all([assert_validacao, assert_despesa, assert_receita, assert_gympass, assert_viagem, assert_aplicacoes, assert_integridade]):
             st.write("Tudo certo, vou fazer alguns cálculos aqui")
             st.session_state.dados=dados
             st.write("Prontinho! Vou gerar seu painel")
@@ -97,6 +100,7 @@ match st.session_state.status:
         receita=dados["receita"]
         gympass=dados["gympass"]
         viagem=dados["viagem"]
+        aplicacoes=dados["aplicacoes"]
         
         window_width=streamlit_js_eval(js_expressions='screen.width', key = 'SCR')
         dia_fatura = gera_dia_fatura(validacao)
@@ -129,6 +133,8 @@ match st.session_state.status:
         grafico_custo_gympass_por_mes = custo_gympass_por_mes(despesa, gympass, date(ano, mes, dia_fatura), media_movel, window_width/4 if st.session_state.is_session_pc else None)
         grafico_saldo_por_mes = saldo_por_mes(despesa, receita, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
         grafico_despesa_parceladas = despesa_parceladas(despesa, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
+        grafico_rendimentos_por_mes = rendimentos_por_mes(receita, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
+        grafico_rendimentos = rendimentos(receita, aplicacoes, window_width/4 if st.session_state.is_session_pc else None)
         grafico_custo_das_viagens = custo_das_viagens(despesa, viagem, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
         grafico_custo_das_grupos = custo_dos_grupos(despesa, validacao, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
 
@@ -155,6 +161,14 @@ match st.session_state.status:
                 colunas = st.columns(2)
                 if grafico_saldo_por_mes: colunas[0].altair_chart(grafico_saldo_por_mes, use_container_width=True)
                 if grafico_despesa_parceladas: colunas[1].altair_chart(grafico_despesa_parceladas, use_container_width=True)
+
+        if grafico_rendimentos_por_mes or grafico_rendimentos:
+            st.header("Investimentos")
+            with st.expander(""):
+                mostra_kpis(kpis, "investimento")
+                colunas = st.columns(2)
+                if grafico_rendimentos_por_mes: colunas[0].altair_chart(grafico_rendimentos_por_mes, use_container_width=True)
+                if grafico_rendimentos: colunas[1].altair_chart(grafico_rendimentos, use_container_width=True)
 
         if grafico_custo_das_viagens or grafico_custo_das_grupos:
             st.header("Outros resultados")

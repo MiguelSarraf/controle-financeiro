@@ -28,13 +28,14 @@ def valida_dataframe(df, colunas, nome):
         passa=False
     return passa
 
-def ajusta_dataframes(validacao, despesa, receita, gympass, viagem):
+def ajusta_dataframes(validacao, despesa, receita, gympass, viagem, aplicacoes):
     dfs={}
     dfs["validacao"]=validacao
     dfs["despesa"]=despesa
     dfs["receita"]=receita
     dfs["gympass"]=gympass
     dfs["viagem"]=viagem
+    dfs["aplicacoes"]=aplicacoes
     for nome, df in dfs.items():
         df.columns=[unidecode(coluna.lower().replace(" ", "_")) for coluna in df.columns]
     return dfs
@@ -127,7 +128,7 @@ def gera_datas_do_ano(fatura, segunda_variavel=(None, [None])):
     return datas
 
 def cria_kpis(despesa, receita, gympass, fatura):
-    kpis = {"mensais":{}, "gympass":{}, "anuais":{}}
+    kpis = {"mensais":{}, "gympass":{}, "anuais":{}, "investimento":{}}
     datas_mes = gera_datas_do_mes(fatura)
     datas_ano = gera_datas_do_ano(fatura)
 
@@ -145,6 +146,8 @@ def cria_kpis(despesa, receita, gympass, fatura):
     despesa = despesa[despesa["data"].isin(datas_ano["data"])]
     despesa_parcelada = despesa[(despesa["data"].dt.day == fatura.day) & (despesa["descricao"].str.contains("/"))]
     receita = receita[receita["data"].isin(datas_ano["data"])]
+
+    kpis["investimento"]["Ganho total"] = (f'R${round(sum(receita[receita["aplicacao"]!="nan"]["valor"]), 2)}', "blue")
 
     kpis["anuais"]["Ganho total"] = (f'R${round(sum(receita["valor"]), 2)}', "blue")
     kpis["anuais"]["Gasto total"] = (f'R${round(sum(despesa["valor"]), 2)}', "red")
@@ -253,6 +256,22 @@ def agrega_despesa_parceladas(despesa, fatura):
     datas = datas[datas["data"].dt.day == fatura.day]
 
     return despesa[(despesa["data"].isin(datas["data"])) & (despesa["descricao"].str.contains("/"))].groupby("data").agg({"valor":"sum"}).reset_index()
+
+def agrega_rendimentos_por_mes(receita, fatura):
+    datas = gera_datas_do_ano(fatura)
+
+    return receita[receita["aplicacao"]!="nan"].merge(datas, on="data")
+
+def agrega_rendimentos(aplicacoes, receita):
+    aplicacoes = receita[receita["aplicacao"]!="nan"].groupby("aplicacao").agg({"valor":"sum"}).reset_index().merge(aplicacoes.groupby("aplicacao").agg({"data":"min", "valor_inicial":"sum"}), on="aplicacao")[["aplicacao", "valor", "valor_inicial"]].rename(columns={"valor":"ganho"}).melt(id_vars=["aplicacao"], value_vars=["valor_inicial", "ganho"], var_name="tipo", value_name="valor").replace({"ganho": "Rendimento", "valor_inicial":"Aporte"})
+    aplicacoes["order"] = np.where(aplicacoes["tipo"]=="Aporte", 0, 1)
+    aplicacoes = aplicacoes.merge(aplicacoes.groupby("aplicacao").agg({"valor":"sum"}).rename(columns={"valor": "total"}), on="aplicacao")
+    aplicacoes["y"] = np.where(aplicacoes["tipo"]=="Aporte", aplicacoes["valor"] / 2, aplicacoes["total"] + 2000)
+    aplicacoes["percent"] = 100*aplicacoes["valor"]/aplicacoes["total"]
+    aplicacoes["texto"] = "R$" + aplicacoes["valor"].round(2).astype(str)
+    aplicacoes["texto"] = np.where(aplicacoes["tipo"]=="Aporte", aplicacoes["texto"], aplicacoes["texto"]+" ("+aplicacoes["percent"].round(2).astype(str)+"%)")
+
+    return aplicacoes
 
 def agrega_custo_das_viagens(despesa, viagem, fatura):
     viagem["dias"] = (viagem["data_de_volta"] - viagem["data_de_ida"]).dt.days + 1
