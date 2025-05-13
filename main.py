@@ -18,6 +18,9 @@ from visualizacoes import *
 if "status" not in st.session_state:
     st.session_state.status="INICIO"
 
+
+#Comentario inutil POKEMON
+
 match st.session_state.status:
     case "INICIO":
         st.set_page_config(layout = "centered")
