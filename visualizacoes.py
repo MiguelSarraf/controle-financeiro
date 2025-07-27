@@ -250,7 +250,7 @@ def rendimentos_por_mes_pctg(aplicacoes, receita, fatura, height):
         grafico=grafico.properties(
             title="Ganhos em investimento por mês (%)"
         )
-    
+
     return grafico.configure_title(fontSize=24)
 
 def rendimentos(receita, aplicacoes, height):
