@@ -213,7 +213,7 @@ def rendimentos_por_mes(receita, fatura, height):
     grafico=grafico.mark_line().encode(
         x=alt.X("data:T", axis=alt.Axis(title=None, format="%b", labelAngle=0)),
         y=alt.Y("valor:Q", axis=alt.Axis(title=None, format="$.2f")),
-        color=alt.Color("aplicacao:N", legend=alt.Legend(title="Aplicação")),
+        color=alt.Color("aplicacao:N", legend=alt.Legend(title="Aplicação", orient="bottom")),
         tooltip=[alt.Tooltip("data:T", format="%b/%Y", title="Mês"), alt.Tooltip("aplicacao:N", title="Aplicação"), alt.Tooltip("valor:Q", format="$.2f", title="Ganho")]
     )
     
@@ -225,6 +225,30 @@ def rendimentos_por_mes(receita, fatura, height):
     else:
         grafico=grafico.properties(
             title="Ganhos em investimento por mês"
+        )
+    
+    return grafico.configure_title(fontSize=24)
+
+def rendimentos_por_mes_pctg(aplicacoes, receita, fatura, height):
+    rendimentos_mes = agrega_rendimentos_por_mes_pctg(aplicacoes, receita, fatura)
+
+    grafico = alt.Chart(rendimentos_mes)
+
+    grafico=grafico.mark_line().encode(
+        x=alt.X("data:T", axis=alt.Axis(title=None, format="%b", labelAngle=0)),
+        y=alt.Y("pctg:Q", axis=alt.Axis(title=None, format=".2%")),
+        color=alt.Color("aplicacao:N", legend=alt.Legend(title="Aplicação", orient="bottom")),
+        tooltip=[alt.Tooltip("data:T", format="%b/%Y", title="Mês"), alt.Tooltip("aplicacao:N", title="Aplicação"), alt.Tooltip("valor:Q", format="$.2f", title="Ganho"), alt.Tooltip("pctg:Q", format=".2%", title="Rendimento")]
+    )
+
+    if height:
+        grafico=grafico.properties(
+            title="Ganhos em investimento por mês (%)",
+            height=height
+        )
+    else:
+        grafico=grafico.properties(
+            title="Ganhos em investimento por mês (%)"
         )
     
     return grafico.configure_title(fontSize=24)

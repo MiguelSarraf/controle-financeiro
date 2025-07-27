@@ -262,6 +262,20 @@ def agrega_rendimentos_por_mes(receita, fatura):
 
     return receita[receita["aplicacao"]!="nan"].merge(datas, on="data")
 
+def agrega_rendimentos_por_mes_pctg(aplicacoes, receita, fatura):
+    datas = gera_datas_do_ano(fatura)
+
+    receita = receita[receita["aplicacao"]!="nan"].merge(datas, on="data")
+    investimento_acumulado = receita[["aplicacao", "data", "valor"]].groupby(["aplicacao", "data"]).sum().groupby(level=[0]).cumsum().reset_index()
+    investimento_acumulado["data"] = pd.to_datetime(investimento_acumulado["data"].dt.date + relativedelta(months=1))
+    investimento_acumulado = investimento_acumulado.rename(columns={"valor": "base"})
+
+    investimento = receita.merge(investimento_acumulado, on = ["data", "aplicacao"],how="left").merge(aplicacoes.groupby("aplicacao").agg({"valor_inicial":"sum"}), on="aplicacao")
+    investimento["base"]  = investimento["base"].fillna(0)+investimento["valor_inicial"]
+    investimento["pctg"] = investimento["valor"]/investimento["base"]
+
+    return investimento
+
 def agrega_rendimentos(aplicacoes, receita):
     aplicacoes = receita[receita["aplicacao"]!="nan"].groupby("aplicacao").agg({"valor":"sum"}).reset_index().merge(aplicacoes.groupby("aplicacao").agg({"data":"min", "valor_inicial":"sum"}), on="aplicacao")[["aplicacao", "valor", "valor_inicial"]].rename(columns={"valor":"ganho"}).melt(id_vars=["aplicacao"], value_vars=["valor_inicial", "ganho"], var_name="tipo", value_name="valor").replace({"ganho": "Rendimento", "valor_inicial":"Aporte"})
     aplicacoes["order"] = np.where(aplicacoes["tipo"]=="Aporte", 0, 1)

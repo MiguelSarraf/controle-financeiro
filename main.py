@@ -137,6 +137,7 @@ match st.session_state.status:
         grafico_rendimentos = rendimentos(receita, aplicacoes, window_width/4 if st.session_state.is_session_pc else None)
         grafico_custo_das_viagens = custo_das_viagens(despesa, viagem, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
         grafico_custo_das_grupos = custo_dos_grupos(despesa, validacao, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
+        grafico_rendimentos_por_mes_pctg = rendimentos_por_mes_pctg(aplicacoes, receita, date(ano, mes, dia_fatura), window_width/4 if st.session_state.is_session_pc else None)
 
         if grafico_saldo_por_dia or grafico_tipos_de_despesa:
             st.header("Resultados mensais")
@@ -167,7 +168,13 @@ match st.session_state.status:
             with st.expander(""):
                 mostra_kpis(kpis, "investimento")
                 colunas = st.columns(2)
-                if grafico_rendimentos_por_mes: colunas[0].altair_chart(grafico_rendimentos_por_mes, use_container_width=True)
+                modo = colunas[0].selectbox("Modo", ["Absoluto", "%"], index=0)
+                if modo=="Absoluto":
+                    if grafico_rendimentos_por_mes: colunas[0].altair_chart(grafico_rendimentos_por_mes, use_container_width=True)
+                elif modo=="%":
+                    if grafico_rendimentos_por_mes_pctg: colunas[0].altair_chart(grafico_rendimentos_por_mes_pctg, use_container_width=True)
+                else:
+                    raise ValueError("Modo inválido")
                 if grafico_rendimentos: colunas[1].altair_chart(grafico_rendimentos, use_container_width=True)
 
         if grafico_custo_das_viagens or grafico_custo_das_grupos:
