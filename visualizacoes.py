@@ -10,7 +10,8 @@ def mostra_kpis(kpis, grupo):
     cols = st.columns(len(kpis[grupo]))
 
     for col, kpi in zip(cols, kpis[grupo]):
-        col.subheader(f"{kpi}: {kpis[grupo][kpi][0]}", divider=kpis[grupo][kpi][1])
+        col.subheader(kpi)
+        col.header(kpis[grupo][kpi][0], divider=kpis[grupo][kpi][1])
 
 #endregion
 
