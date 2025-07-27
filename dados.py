@@ -317,7 +317,7 @@ def agrega_fluxo_saldo(despesa, receita, fatura):
     receita["tipo"] = ""
     despesa["valor"] = -despesa["valor"]
 
-    fluxo = pd.concat([despesa, receita]).reset_index().sort_values("data", kind = "stable")
+    fluxo = pd.concat([despesa, receita]).reset_index(drop=True).sort_values("data", kind = "stable")
 
     fluxo["data"] = fluxo["data"].dt.strftime("%d/%m/%Y")
     fluxo["valor"] = fluxo["valor"].apply(lambda val: 'R${:.2f}'.format(val) if val>0 else '-R${:.2f}'.format(-val))
