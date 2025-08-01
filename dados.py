@@ -11,7 +11,7 @@ from constantes import *
 def aplica_schema(df, schema, datas):
     for coluna in schema:
         if schema[coluna]=="float":
-            df[coluna]=df[coluna].str.replace("^R\$ *", "", regex=True).str.replace(".", "").str.replace(",", ".")
+            df[coluna]=df[coluna].str.replace("R\$ *", "", regex=True).str.replace(".", "").str.replace(",", ".")
         df[coluna]=df[coluna].astype(schema[coluna])
     for coluna in datas:
         df[coluna]=pd.to_datetime(df[coluna], format="%d/%m/%Y")
