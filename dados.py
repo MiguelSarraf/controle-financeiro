@@ -11,7 +11,7 @@ from constantes import *
 def aplica_schema(df, schema, datas):
     for coluna in schema:
         if schema[coluna]=="float":
-            df[coluna]=df[coluna].str.replace("^R\$ *", "", regex=True).str.replace(".", "").str.replace(",", ".")
+            df[coluna]=df[coluna].str.replace("R\$ *", "", regex=True).str.replace(".", "").str.replace(",", ".")
         df[coluna]=df[coluna].astype(schema[coluna])
     for coluna in datas:
         df[coluna]=pd.to_datetime(df[coluna], format="%d/%m/%Y")
@@ -119,11 +119,7 @@ def gera_datas_do_ano(fatura, segunda_variavel=(None, [None])):
 
     datas = gera_datas(primeira_fatura, ultima_fatura, segunda_variavel)
     datas["ano"] = fatura.year
-    datas["mes"] = np.where(
-        datas["data"].dt.day < fatura.day,
-        datas["data"].dt.month - 1,
-        datas["data"].dt.month
-    )
+    datas["mes"] = datas["data"].apply(lambda dia: dia-relativedelta(days=fatura.day-1)).dt.month
 
     return datas
 
