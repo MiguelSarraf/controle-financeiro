@@ -134,7 +134,7 @@ def cria_kpis(despesa, receita, gympass, fatura):
 
     gympass["ano"] = gympass["data"].dt.year
     gympass["mes"] = gympass["data"].dt.month
-    gympass = gympass[gympass["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"data":"count"}).reset_index().rename(columns={"data":"usos"}).merge(custo_gympass, on=["ano", "mes"])
+    gympass = gympass[gympass["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"data":"count"}).reset_index().rename(columns={"data":"usos"}).merge(custo_gympass, on=["ano", "mes"], how="left")
     gympass["custo_por_aula"] = gympass["valor"]/gympass["usos"]
     maior_uso = gympass[gympass["usos"] == max(gympass["usos"])]
     menor_uso = gympass[gympass["usos"] == min(gympass["usos"])]
