@@ -213,7 +213,7 @@ def agrega_custo_gympass_por_mes(despesa, gympass, fatura, media_movel):
     gympass["ano"] = gympass["data"].dt.year
     gympass["mes"] = gympass["data"].dt.month
     gympass = gympass.drop(columns=["data"])
-    gympass = gympass[gympass["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"atividade":"count"}).reset_index().rename(columns={"atividade":"usos"}).merge(custo_gympass, on=["ano", "mes"])
+    gympass = gympass[gympass["ano"] == fatura.year].groupby(["ano", "mes"]).agg({"atividade":"count"}).reset_index().rename(columns={"atividade":"usos"}).merge(custo_gympass, on=["ano", "mes"], how="left")
     gympass["custo_por_aula"] = gympass["valor"]/gympass["usos"]
     gympass["usos_movel"] = gympass["usos"]
     gympass["valor_movel"] = gympass["valor"]
