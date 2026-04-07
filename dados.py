@@ -179,7 +179,7 @@ def agrega_saldo_por_dia(despesa, receita, fatura):
     receita["receita"] = receita["valor"].cumsum()
 
     saldo = datas.merge(receita[["data", "receita"]], on="data", how="left").merge(despesa[["data", "despesa"]], on="data", how="left")
-    saldo["saldo"] = saldo["receita"].fillna(method='ffill').fillna(0)-saldo["despesa"].fillna(method='ffill').fillna(0)
+    saldo["saldo"] = saldo["receita"].ffill().fillna(0)-saldo["despesa"].ffill().fillna(0)
 
     proximo_saldo = saldo[["data", "saldo"]].rename(columns={"saldo": "proximo_saldo"})
     proximo_saldo["data"] = pd.to_datetime(proximo_saldo["data"].dt.date + relativedelta(days=-1))
