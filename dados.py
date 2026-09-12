@@ -256,6 +256,9 @@ def agrega_despesa_parceladas(despesa, fatura):
 def agrega_rendimentos_por_mes(receita, fatura):
     datas = gera_datas_do_ano(fatura)
 
+    print(receita)
+    print(receita[receita["aplicacao"]!="nan"].merge(datas, on="data"))
+
     return receita[receita["aplicacao"]!="nan"].merge(datas, on="data")
 
 def agrega_rendimentos_por_mes_pctg(aplicacoes, receita, fatura):
