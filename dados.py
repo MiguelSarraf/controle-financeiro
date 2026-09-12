@@ -318,7 +318,7 @@ def agrega_fluxo_saldo(despesa, receita, fatura):
     fluxo["data"] = fluxo["data"].dt.strftime("%d/%m/%Y")
     fluxo["valor"] = fluxo["valor"].apply(lambda val: 'R${:.2f}'.format(val) if val>0 else '-R${:.2f}'.format(-val))
 
-    return fluxo.rename(columns={"data":"Data", "descricao":"Descrição", "valor":"Valor", "tipo":"tipo"}).style.applymap(colore_valor, subset=['Valor'])
+    return fluxo.rename(columns={"data":"Data", "descricao":"Descrição", "valor":"Valor", "tipo":"tipo"}).style.map(colore_valor, subset=['Valor'])
 
 def agrega_fluxo_gympass(gympass, fatura):
     gympass = gympass[(gympass["data"].dt.month == fatura.month) & (gympass["data"].dt.year == fatura.year)][["data", "atividade", "unidade"]]
